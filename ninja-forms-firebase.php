@@ -88,29 +88,10 @@ if( version_compare( get_option( 'ninja_forms_version', '0.0.0' ), '3', '<' ) ||
             add_action( 'admin_init', array( $this, 'setup_license') );
 
             /*
-             * Optional. If your extension creates a new field interaction or display template...
-             */
-            add_filter( 'ninja_forms_register_fields', array($this, 'register_fields'));
-
-            /*
              * Optional. If your extension processes or alters form submission data on a per form basis...
              */
             add_filter( 'ninja_forms_register_actions', array($this, 'register_actions'));
 
-            /*
-             * Optional. If your extension collects a payment (ie Strip, PayPal, etc)...
-             */
-            add_filter( 'ninja_forms_register_payment_gateways', array($this, 'register_payment_gateways'));
-        }
-
-        /**
-         * Optional. If your extension creates a new field interaction or display template...
-         */
-        public function register_fields($actions)
-        {
-            $actions[ 'firebase' ] = new NF_Firebase_Fields_FirebaseExample(); // includes/Fields/FirebaseExample.php
-
-            return $actions;
         }
 
         /**
@@ -118,19 +99,9 @@ if( version_compare( get_option( 'ninja_forms_version', '0.0.0' ), '3', '<' ) ||
          */
         public function register_actions($actions)
         {
-            $actions[ 'firebase' ] = new NF_Firebase_Actions_FirebaseExample(); // includes/Actions/FirebaseExample.php
+            $actions[ 'firebase' ] = new NF_Firebase_Actions_SendFirebaseDatabase(); // includes/Actions/SendFirebaseDatabase.php
 
             return $actions;
-        }
-
-        /**
-         * Optional. If your extension collects a payment (ie Strip, PayPal, etc)...
-         */
-        public function register_payment_gateways($payment_gateways)
-        {
-            $payment_gateways[ 'firebase' ] = new NF_Firebase_PaymentGateways_FirebaseExample(); // includes/PaymentGateways/FirebaseExample.php
-
-            return $payment_gateways;
         }
 
         /*
