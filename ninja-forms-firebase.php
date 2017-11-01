@@ -23,7 +23,7 @@ if( version_compare( get_option( 'ninja_forms_version', '0.0.0' ), '3', '<' ) ||
      */
     final class NF_Firebase
     {
-        const VERSION = '0.0.1';
+        const VERSION = '0.0.2';
         const SLUG    = 'firebase';
         const NAME    = 'Firebase';
         const AUTHOR  = 'Burak Doğan';
