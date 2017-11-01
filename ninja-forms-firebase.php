@@ -4,7 +4,7 @@
  * Plugin Name: Ninja Forms - Firebase
  * Plugin URI: http://www.burak-dogan.com/ninja-forms-firebase
  * Description: Plugin simply integrates firebase database with ninja forms
- * Version: 3.0.0
+ * Version: 3.1.0
  * Author: Burak Doğan
  * Author URI: http://www.burak-dogan.com
  * Text Domain: ninja-forms-firebase
