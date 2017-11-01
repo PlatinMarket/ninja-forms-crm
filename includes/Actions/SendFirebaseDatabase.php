@@ -1,5 +1,8 @@
 <?php if ( ! defined( 'ABSPATH' ) || ! class_exists( 'NF_Abstracts_Action' )) exit;
 
+// Require composer autoload
+require_once dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
+
 /**
  * Class NF_Firebase_Actions_SendFirebaseDatabase
  */
@@ -24,6 +27,22 @@ final class NF_Firebase_Actions_SendFirebaseDatabase extends NF_Abstracts_Action
    * @var int
    */
   protected $_priority = '10';
+
+	/**
+	 * @var array
+	 */
+  protected $endpoints = array(
+  	'realtime' => 'https://%s.firebaseio.com%s',
+	  'firestore' => 'https://firestore.googleapis.com/v1beta1/projects/%s/databases/(default)/documents%s'
+  );
+
+	/**
+	 * @var array
+	 */
+  protected $scopes = array(
+  	'realtime' => array( 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/firebase.database'),
+	  'firestore' => 'https://www.googleapis.com/auth/datastore'
+  );
 
   /**
    * Constructor
@@ -56,13 +75,32 @@ final class NF_Firebase_Actions_SendFirebaseDatabase extends NF_Abstracts_Action
 
     // If there is no errors so send to firebase
     if (empty($errors)) {
+
+    	// Get Firebase Database Type
+	    $firebaseDbType = $action_settings['firebase_db_type'];
+
+	    // Generate Access Token
+	    $access_token = null;
+	    try {
+	    	$access_token = $this->get_access_token($action_settings['firebase_json_key'], $this->scopes[$firebaseDbType]);
+	    } catch (Exception $e) {
+		    $errors[ 'access_token' ] = sprintf( __( 'Your email action "%s" has an error. Please check this setting and try again. ERROR: %s', 'ninja-forms'), $action_settings[ 'label' ], $e->getMessage() );
+	    }
+
     	// Request Method
     	$requestMethod = $action_settings['request_method'];
 
     	// Generate Request Address
-    	$requestAddress = sprintf('https://%s.firebaseio.com%s?auth=%s', $action_settings['database_name'], $action_settings['endpoint'], $action_settings['firebase_auth']);
+    	$requestAddress = sprintf($this->endpoints[$firebaseDbType], $action_settings['database_name'], $action_settings['endpoint']);
 
-    	// Request Body
+	    // Generate For Firestore body
+	    if ($firebaseDbType === 'firestore') {
+	    	if (!isset($action_settings['json_body']['fields'])) $action_settings['json_body'] = array('fields' => $action_settings['json_body']);
+	    	foreach ($action_settings['json_body']['fields'] as $key => $value) {
+			    $action_settings['json_body']['fields'][$key] = array( "stringValue" => $value );
+		    }
+	    }
+	    // Request Body
     	$requestBody = json_encode($action_settings['json_body']);
 
 	    // Initialize cURL
@@ -74,6 +112,7 @@ final class NF_Firebase_Actions_SendFirebaseDatabase extends NF_Abstracts_Action
 	    curl_setopt( $curl, CURLOPT_POSTFIELDS, $requestBody );
 	    curl_setopt( $curl, CURLOPT_HTTPHEADER, array(
 			    'Content-Type: application/json',
+			    sprintf('Authorization: Bearer %s', $access_token),
 			    'Content-Length: ' . strlen($requestBody))
 	    );
 
@@ -106,6 +145,17 @@ final class NF_Firebase_Actions_SendFirebaseDatabase extends NF_Abstracts_Action
     return $data;
   }
 
+	/**
+	 * @param $firebase_json_key
+	 * @param $scope
+	 *
+	 * @return mixed
+	 */
+	protected function get_access_token( $firebase_json_key, $scope ) {
+		$credential = new \Google\Auth\Credentials\ServiceAccountCredentials($scope, $firebase_json_key);
+		$code = $credential->fetchAuthToken();
+		return $code['access_token'];
+	}
 
 	/**
 	 * Check form data for errors
@@ -118,7 +168,7 @@ final class NF_Firebase_Actions_SendFirebaseDatabase extends NF_Abstracts_Action
 	{
 		$errors = array();
 
-		$fields = array('firebase_auth', 'request_method', 'database_name', 'endpoint', 'json_body');
+		$fields = array('firebase_json_key', 'firebase_db_type', 'request_method', 'database_name', 'endpoint', 'json_body');
 
 		foreach( $fields as $field ){
 			// First Check for empty
@@ -127,23 +177,14 @@ final class NF_Firebase_Actions_SendFirebaseDatabase extends NF_Abstracts_Action
 				continue;
 			}
 
-			switch ($field) {
+			switch (true) {
 				// Check Json Body
-				case 'json_body':
-					$action_settings['json_body'] = trim($action_settings['json_body']);
-					if (strpos($action_settings['json_body'], '{') === false) $action_settings['json_body'] = "{" . $action_settings['json_body'] . "}";
+				case ($field == 'json_body' || $field == 'firebase_json_key'):
+					$action_settings[$field] = trim($action_settings[$field]);
+					if (strpos($action_settings[$field], '{') === false) $action_settings[$field] = "{" . $action_settings[$field] . "}";
 					// Decode & Check Json
-					$action_settings['json_body'] = json_decode($action_settings['json_body']);
+					$action_settings[$field] = json_decode($action_settings[$field], true);
 					if (json_last_error() !== JSON_ERROR_NONE) {
-						$errors['invalid_' . $field] = sprintf( __( 'Your email action "%s" has an invalid value for the "%s" setting. Please check this setting and try again.', 'ninja-forms'), $action_settings[ 'label' ], $field );
-						continue;
-					}
-					break;
-				// Check endpoint for json ending
-				case 'endpoint':
-					$action_settings['endpoint'] = trim($action_settings['endpoint']);
-					$endpointParts = explode('.', $action_settings['endpoint']);
-					if (end($endpointParts) !== 'json') {
 						$errors['invalid_' . $field] = sprintf( __( 'Your email action "%s" has an invalid value for the "%s" setting. Please check this setting and try again.', 'ninja-forms'), $action_settings[ 'label' ], $field );
 						continue;
 					}

@@ -2,18 +2,34 @@
 
 return array(
 
- /*
-	* Firebase Legacy Token
-	*/
+	/*
+	 * Firebase Legacy Token
+	 */
 
-	'firebase_auth' => array(
-		'name' => 'firebase_auth',
-		'type' => 'textbox',
+	'firebase_db_type' => array(
+		'name' => 'firebase_db_type',
+		'type' => 'select',
 		'group' => 'primary',
-		'label' => __( 'Firebase Legacy Token', 'ninja-forms' ),
-		'placeholder' => '',
+		'label' => __( 'Database Type', 'ninja-forms' ) . ' <span style=\'color: red;\'>* NEW</span>',
+		'options' => array(
+			array( 'label' => 'Realtime Database', 'value' => 'realtime' ),
+			array( 'label' => 'Firestore', 'value' => 'firestore' )
+		),
 		'width' => 'full',
+		'value' => 'realtime'
+	),
+
+	/*
+	 * Service account token
+	 */
+	'firebase_json_key' => array(
+		'name' => 'firebase_json_key',
+		'type' => 'textarea',
+		'group' => 'primary',
+		'label' => __( 'JSON Service Key', 'ninja-forms' ),
+		'placeholder' => '',
 		'value' => '',
+		'width' => 'full'
 	),
 
 	/*
@@ -42,7 +58,7 @@ return array(
 		'name' => 'database_name',
 		'type' => 'textbox',
 		'group' => 'primary',
-		'label' => __( 'Firebase Database Name', 'ninja-forms' ),
+		'label' => __( 'FIrebase Project Name', 'ninja-forms' ),
 		'placeholder' => '',
 		'width' => 'one-half',
 		'value' => '',
