@@ -23,7 +23,7 @@ if( version_compare( get_option( 'ninja_forms_version', '0.0.0' ), '3', '<' ) ||
      */
     final class NF_Firebase
     {
-        const VERSION = '0.0.2';
+        const VERSION = '1.0.0';
         const SLUG    = 'firebase';
         const NAME    = 'Firebase';
         const AUTHOR  = 'Burak Doğan';
@@ -76,7 +76,7 @@ if( version_compare( get_option( 'ninja_forms_version', '0.0.0' ), '3', '<' ) ||
                  */
                 spl_autoload_register(array(self::$instance, 'autoloader'));
             }
-            
+
             return self::$instance;
         }
 
@@ -122,7 +122,7 @@ if( version_compare( get_option( 'ninja_forms_version', '0.0.0' ), '3', '<' ) ||
                 require_once $classes_dir . $class_file;
             }
         }
-        
+
         /**
          * Template
          *
@@ -137,7 +137,7 @@ if( version_compare( get_option( 'ninja_forms_version', '0.0.0' ), '3', '<' ) ||
 
             include self::$dir . 'includes/Templates/' . $file_name;
         }
-        
+
         /**
          * Config
          *
