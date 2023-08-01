@@ -55,8 +55,13 @@ final class NF_Firebase_Actions_SendFirebaseDatabase extends NF_Abstracts_Action
   {
 		$json = sprintf('{%s}', $action_settings['json_body']);
 
-		// Request Body
-		$requestBody = http_build_query(json_decode($json, true));
+		$body = json_decode($json, true);
+
+		foreach( $body as &$value ) {
+		 	$value = iconv( 'UTF-8','ISO-8859-9', $value );
+		 }
+
+		$body = http_build_query($body);
 
 		// Initialize cURL
 		$curl = curl_init();
@@ -64,10 +69,10 @@ final class NF_Firebase_Actions_SendFirebaseDatabase extends NF_Abstracts_Action
 		// Set cURL options
 		curl_setopt( $curl, CURLOPT_URL, $action_settings['endpoint'] );
 		curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, "POST" );
-		curl_setopt( $curl, CURLOPT_POSTFIELDS, $requestBody );
+		curl_setopt( $curl, CURLOPT_POSTFIELDS, $body );
 		curl_setopt( $curl, CURLOPT_HTTPHEADER, array(
 				'Content-Type: application/x-www-form-urlencoded',
-				'Content-Length: ' . strlen($requestBody))
+				'Content-Length: ' . strlen($body))
 		);
 
 		// Timeout
@@ -84,7 +89,7 @@ final class NF_Firebase_Actions_SendFirebaseDatabase extends NF_Abstracts_Action
 
 		// error_log( print_r([
 		// 	"url" => $action_settings['endpoint'],
-		// 	"request" => $requestBody,
+		// 	"request" => $body,
 		// 	"response" => $response,
 		// 	"code" => $httpcode,
 		// ], true ) );
