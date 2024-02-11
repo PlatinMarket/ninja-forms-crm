@@ -5,5 +5,8 @@
             "name": "Burak Doğan",
             "email": "me@burak-dogan.com"
         }
-    ]
+    ],
+    "require": {
+        "mailchimp/marketing": "^3.0"
+    }
 }
