@@ -42,6 +42,83 @@ final class NF_Firebase_Actions_SendFirebaseDatabase extends NF_Abstracts_Action
 		$this->_settings = array_merge($this->_settings, $settings);
 	}
 
+  private function processMailchimp($settings, $body) {
+    try {
+      $mailchimp = new \MailchimpMarketing\ApiClient();
+
+      $token = preg_match("/(.+)-(.+)/", $settings['mailchimp_api_key'], $matches);
+
+      $mailchimp->setConfig([
+        'apiKey' => $matches[0],
+        'server' => $matches[2],
+      ]);
+
+      $response = $mailchimp->lists->addListMember($settings['mailchimp_list'], [
+          'email_address' => $body['email'],
+          'status' => 'subscribed',
+          'merge_fields' => [
+              'FNAME' => $body['name'],
+              'LNAME' => '',
+              'PHONE' => $body['phoneNumber'],
+          ],
+      ], false);
+    } catch (\throwable $e) {
+      error_log( print_r($e, true ) );
+    }
+  }
+
+  private function processCustom($settings, $body) {
+    try {
+      foreach( $body as &$value ) {
+          $value = iconv( 'UTF-8','ISO-8859-9', $value );
+      }
+
+      $body = http_build_query($body);
+
+      // Initialize cURL
+      $curl = curl_init();
+
+      // Set cURL options
+      curl_setopt( $curl, CURLOPT_URL, $settings['endpoint'] );
+      curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, "POST" );
+      curl_setopt( $curl, CURLOPT_POSTFIELDS, $body );
+      curl_setopt( $curl, CURLOPT_HTTPHEADER, array(
+          'Content-Type: application/x-www-form-urlencoded',
+          'Content-Length: ' . strlen($body))
+      );
+
+      // Timeout
+      curl_setopt( $curl, CURLOPT_CONNECTTIMEOUT ,0 );
+      curl_setopt( $curl, CURLOPT_TIMEOUT, 10 );
+
+      // Get return value
+      curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
+
+      // Make request
+      $response = curl_exec( $curl );
+
+      $httpcode = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
+
+      // error_log( print_r([
+      // 	"url" => $settings['endpoint'],
+      // 	"request" => $body,
+      // 	"response" => $response,
+      // 	"code" => $httpcode,
+      // ], true ) );
+
+      // Check Request
+      if ($response === false || $httpcode < 200 || $httpcode >= 300) {
+        $curlError = curl_error( $curl );
+        $errors[ 'data_not_sent' ] = sprintf( __( 'Your email action "%s" has an error. Please check this setting and try again. ERROR: %s', 'ninja-forms'), $settings[ 'label' ], $curlError ? $curlError : $httpcode . ' - ' . $response );
+      }
+
+      // Close connection
+      curl_close( $curl );
+    } catch (\throwable $e) {
+      error_log( print_r($e, true ) );
+    }
+  }
+
 	/**
 	 * Process form
 	 *
@@ -57,52 +134,8 @@ final class NF_Firebase_Actions_SendFirebaseDatabase extends NF_Abstracts_Action
 
 		$body = json_decode($json, true);
 
-		foreach( $body as &$value ) {
-		 	$value = iconv( 'UTF-8','ISO-8859-9', $value );
-		 }
-
-		$body = http_build_query($body);
-
-		// Initialize cURL
-		$curl = curl_init();
-
-		// Set cURL options
-		curl_setopt( $curl, CURLOPT_URL, $action_settings['endpoint'] );
-		curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, "POST" );
-		curl_setopt( $curl, CURLOPT_POSTFIELDS, $body );
-		curl_setopt( $curl, CURLOPT_HTTPHEADER, array(
-				'Content-Type: application/x-www-form-urlencoded',
-				'Content-Length: ' . strlen($body))
-		);
-
-		// Timeout
-		curl_setopt( $curl, CURLOPT_CONNECTTIMEOUT ,0 );
-		curl_setopt( $curl, CURLOPT_TIMEOUT, 10 );
-
-		// Get return value
-		curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
-
-		// Make request
-		$response = curl_exec( $curl );
-
-		$httpcode = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
-
-		// error_log( print_r([
-		// 	"url" => $action_settings['endpoint'],
-		// 	"request" => $body,
-		// 	"response" => $response,
-		// 	"code" => $httpcode,
-		// ], true ) );
-
-
-		// Check Request
-		if ($response === false || $httpcode < 200 || $httpcode >= 300) {
-			$curlError = curl_error( $curl );
-			$errors[ 'data_not_sent' ] = sprintf( __( 'Your email action "%s" has an error. Please check this setting and try again. ERROR: %s', 'ninja-forms'), $action_settings[ 'label' ], $curlError ? $curlError : $httpcode . ' - ' . $response );
-		}
-
-		// Close connection
-		curl_close( $curl );
+    $this->processCustom($action_settings, $body);
+    $this->processMailchimp($action_settings, $body);
 
     return $data;
   }

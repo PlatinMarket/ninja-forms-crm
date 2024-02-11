@@ -1,6 +1,28 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit;
 
 return array(
+  'mailchimp_api_key' => array(
+		'name' => 'mailchimp_api_key',
+		'type' => 'textbox',
+		'group' => 'primary',
+		'label' => __( 'Mailchimp API KEY', 'ninja-forms' ),
+		'placeholder' => __( '###############################-us5', 'ninja-forms' ),
+		'width' => 'full',
+		'value' => '',
+		'use_merge_tags' => TRUE
+	),
+
+  'mailchimp_list' => array(
+    'name' => 'mailchimp_list',
+		'type' => 'textbox',
+		'group' => 'primary',
+		'label' => __( 'Mailchimp LIST', 'ninja-forms' ),
+		'placeholder' => __( '5a745b43c7', 'ninja-forms' ),
+		'width' => 'full',
+		'value' => '',
+		'use_merge_tags' => TRUE
+  ),
+
 	/*
 	 * Endpoint
 	 */
@@ -32,5 +54,4 @@ return array(
 			),
 		)
 	),
-
 );
